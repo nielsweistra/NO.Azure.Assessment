@@ -58,7 +58,7 @@
       "lbProbeID": "[concat(variables('lbID'),'/probes/lbprobe')]",
       "frontEndIPConfigID": "[concat(variables('lbID'),'/frontendIPConfigurations/loadBalancerFrontEnd')]",
       "publicIPAddressName": "[concat(variables('namingInfix'), 'pip', uniqueString(resourceGroup().id))]",
-      "publicIPAddressID": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]",
+      "publicIPAddressID": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
     },
     "resources": [
       {
@@ -218,7 +218,6 @@
         },
         "location": "[resourceGroup().location]",
         "dependsOn": [
-          "[variables('storageAccountName')]",
           "nicLoop",
           "[variables('availabilitySetName')]"
         ],
