@@ -81,7 +81,7 @@ function New-ServicePrincipal {
     $azureAdApplication = New-AzureRmADApplication -DisplayName $DisplayName -HomePage $HomePage -IdentifierUris $IdentifierUris -Password $Password
     $servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $azureAdApplication.ApplicationId
 
-    Start-Sleep -s 5
+    Start-Sleep -s 10
 
     Write-Host "Assign Contributor Role to $($azureAdApplication.ApplicationId)"
     New-AzureRmRoleAssignment -RoleDefinitionName "Contributor" -ApplicationId $azureAdApplication.ApplicationId
