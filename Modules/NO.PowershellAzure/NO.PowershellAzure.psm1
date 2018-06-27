@@ -1,7 +1,3 @@
-[CmdletBinding()]
-param(
-    
-)
 Get-ChildItem -Path $PSScriptRoot -Recurse -File | Unblock-File
 
 class AzureRestServiceManager {
@@ -46,6 +42,7 @@ class AzureRestServiceManager {
 }
 
 function New-Secret  {
+    [CmdletBinding()]
     Param (
     [parameter(Mandatory=$true)]
     $VaultName,
@@ -74,13 +71,14 @@ function Get-Secret {
 
     if(Get-AzureKeyVaultSecret -vaultName $VaultName -name $Name) {
 
-        $SecretVaulue = (get-AzureKeyVaultSecret -vaultName $VaultName -name $Name).SecretValueText
-        Write-Verbose $SecretVaulue
+        $SecretValue = (get-AzureKeyVaultSecret -vaultName $VaultName -name $Name).SecretValueText
+        Write-Verbose $SecretValue
     }
-    return $SecretVaulue | Out-Null
+    return $SecretValue
 }
 
 function New-ServicePrincipal {
+    [CmdletBinding()]
     Param(
     [parameter(Mandatory=$true)]
     [string]$DisplayName,
@@ -117,6 +115,7 @@ function New-ServicePrincipal {
 }
 
 function New-KeyVault {
+    [CmdletBinding()]
     Param(
     [parameter(Mandatory=$true)]
     [string]$VaultName,
@@ -145,6 +144,7 @@ function New-KeyVault {
     return $VaultName | Out-Null
 }
 function Set-AzurePolicy ($PolicyName, $SubscriptionID, $ApplicationID, $ClientSecret, $ResourceGroup) {
+    [CmdletBinding()]
 
     $json =@'
     {
