@@ -19,8 +19,7 @@ Param(
     [string]$ServicePrincipalName
 )
 
-    $RandomPassword = -join(0..64|%{[char][int]((65..90) + (97..122)  | Get-Random)})
-    $Password = ConvertTo-SecureString $RandomPassword -AsPlainText -Force
+    $Password = ConvertTo-SecureString $(-join(0..64|%{[char][int]((65..90) + (97..122)  | Get-Random)})) -AsPlainText -Force
 
     $creds = Get-Credential
     Login-AzureRmAccount -TenantId $TenantID -Credential $creds
@@ -34,4 +33,4 @@ Param(
 
     Write-Host "Save the ClientSecret to the Azure Key Vault created in the previous step" 
     New-Secret -VaultName $VaultName -Name $ServicePrincipalName -SecretValue $Password
-    Get-Secret -VaultName $VaultName -Name $ServicePrincipalName
+    New-Secret -VaultName $VaultName -Name "LocalAdmin" -SecretValue $Password
