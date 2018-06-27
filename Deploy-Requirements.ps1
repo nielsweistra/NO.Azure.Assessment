@@ -27,7 +27,6 @@ function Main {
     $creds = Get-Credential
     Login-AzureRmAccount -TenantId $TenantID -Credential $creds
     Select-AzureRmSubscription -SubscriptionId $SubscriptionID
-    
     $ServicePrincipal = New-ServicePrincipal -Password $Password -DisplayName $ServicePrincipalName -HomePage "http://$(-join ((65..90) + (97..122) | Get-Random -Count 5 | % {[char]$_}))" -IdentifierUris "http://$(-join ((65..90) + (97..122) | Get-Random -Count 5 | % {[char]$_}))"
     
     New-KeyVault -VaultName $VaultName -ResourceGroup $ResourceGroup -Region $Region -Company $Company -Enviroment $Enviroment -ServicePrincipalName $ServicePrincipal.DisplayName[0]
