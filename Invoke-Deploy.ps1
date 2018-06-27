@@ -1,31 +1,28 @@
 Using module ".\Modules\NO.PowershellAzure\NO.PowershellAzure.psm1"
 [CmdletBinding()]
+Param (
+    [parameter(Mandatory=$false)] $TenantID = "b2569ab6-7aa8-43fe-9a2c-e4abeb992e00",
+    [parameter(Mandatory=$false)] $SubscriptionID = "8b32203d-d655-41b1-84a7-2f119b31dc8a",
+    [parameter(Mandatory=$false)] $VaultRG = "Org_Vault_RG",
+    [parameter(Mandatory=$false)] $VaultName = "OrgVault",
+    [parameter(Mandatory=$false)] $RG = "Org_RG",
+    [parameter(Mandatory=$false)] $Company = "Org",
+    [parameter(Mandatory=$false)] $Region = "WestEurope",
+    [parameter(Mandatory=$false)] $Enviroment = "Test",
+    [parameter(Mandatory=$false)] $ServicePrincipalName = "$($Company)SP$(Get-Date -Date (Get-Date -format "dd-MMM-yyyy HH:mm") -UFormat %s)"
+)
 
-$ServicePrincipal = "a72ae51b-31a2-4e9a-b1df-bca4778f01ab"
-$TenantID = "b2569ab6-7aa8-43fe-9a2c-e4abeb992e00"
-$SubscriptionID = "8b32203d-d655-41b1-84a7-2f119b31dc8a"
-$VaultRG = "Org_Vault_RG"
-$VaultName = "OrgVault"
-$RG = "Org_RG"
-$Company = "Org"
-$Region = "WestEurope"
-$Enviroment = "Test"
-$ServicePrincipalName = "$($Company)SP$(Get-Date -Date (Get-Date -format "dd-MMM-yyyy HH:mm") -UFormat %s)"
-$ServicePrincipalPassword = $null
-$RandomPassword = -join(0..64|%{[char][int]((65..90) + (97..122)  | Get-Random)})
+Write-Host "Start deploying Azure Key Fault" -ForegroundColor Green
+.\Deploy-AzurekeyFault.ps1 -TenantID $TenantID -SubscriptionID $SubscriptionID -ResourceGroup $VaultRG -Company $Company -Enviroment $Enviroment -ServicePrincipalName $ServicePrincipalName -VaultName $VaultName -Region $Region
 
-$VMpassword = ConvertTo-SecureString $RandomPassword -AsPlainText -Force
+$ServicePrincipal = Get-AzureRmADServicePrincipal -DisplayName $ServicePrincipalName
+$ClientSecret = ConvertTo-SecureString (Get-Secret -VaultName $VaultName -Name $ServicePrincipalName) -AsPlainText -Force
 
-.\Deploy-Requirements.ps1 -TenantID $TenantID -SubscriptionID $SubscriptionID -ResourceGroup $VaultRG -Company $Company -Enviroment $Enviroment -ServicePrincipalName $ServicePrincipalName -VaultName $VaultName -Region $Region
-
-Write-Host -Message "Retrieve secret from Vault"
-$ServicePrincipalPassword = Get-Secret -VaultName $VaultName -Name $ServicePrincipalName
-
-If ($ServicePrincipalPassword) {
-    $spCred = New-Object System.Management.Automation.PSCredential($ServicePrincipal, $ServicePrincipalPassword)
+If ($ClientSecret -and $ServicePrincipal) {
+    $spCred = New-Object System.Management.Automation.PSCredential($ServicePrincipal.ApplicationId, $ClientSecret)
 }
 else {
-    $spCred = Get-Credential -Message "Enter your password" -UserName $ServicePrincipal
+    $spCred = Get-Credential -Message "Login with your Service Principal credentials"
 }
 
 $yes = new-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "help"
@@ -35,7 +32,9 @@ $answer = $host.ui.PromptForChoice("Deploy Azure Template", "Are you sure?", $ch
 
 switch ($answer) {
     0 {
-        .\Deploy-AzureTemplate.ps1 -TenantID $TenantID -SubscriptionID $SubscriptionID -ResourceGroup $RG -ServicePrincipal $spCred.UserName -ServicePrincipalPassword $spCred.Password -AdminPassword $VMPassword -Company $Comapny -Enviroment $Enviroment
+        Write-Host "Get ClientSecret from Vault"
+        $AdminPassword = Get-Secret -VaultName $VaultName -Name "LocalAdmin"
+        .\Deploy-AzureTemplate.ps1 -TenantID $TenantID -SubscriptionID $SubscriptionID -ResourceGroup $RG -ServicePrincipal $spCred.UserName -ServicePrincipalPassword $spCred.Password -AdminPassword $AdminPassword -Company $Company -Enviroment $Enviroment
         
     }
     1 {
