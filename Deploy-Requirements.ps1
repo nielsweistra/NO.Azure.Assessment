@@ -1,14 +1,22 @@
 Using module ".\Modules\NO.PowershellAzure\NO.PowershellAzure.psm1"
 [CmdletBinding()]
 Param(
-    [string]$TenantID = "b2569ab6-7aa8-43fe-9a2c-e4abeb992e00",
-    [string]$SubscriptionID = "8b32203d-d655-41b1-84a7-2f119b31dc8a",
-    [string]$ResourceGroup = "NO_Vault_RG",
-    [string]$VaultName = "NOVault",
-    [string]$Region = "WestEurope",
-    [string]$Company = "NO",
-    [string]$Enviroment = "Test",
-    [string]$ServicePrincipalName = "$($Company)_SP_$([GUID]::NewGuid())"
+    [parameter(Mandatory=$true)]
+    [string]$TenantID,
+    [parameter(Mandatory=$true)]
+    [string]$SubscriptionID,
+    [parameter(Mandatory=$true)]
+    [string]$ResourceGroup,
+    [parameter(Mandatory=$true)]
+    [string]$VaultName,
+    [parameter(Mandatory=$true)]
+    [string]$Region,
+    [parameter(Mandatory=$true)]
+    [string]$Company,
+    [parameter(Mandatory=$true)]
+    [string]$Enviroment,
+    [parameter(Mandatory=$true)]
+    [string]$ServicePrincipalName
 )
 
 function Main {
