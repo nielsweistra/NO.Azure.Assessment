@@ -19,7 +19,7 @@ Param(
     [string]$ServicePrincipalName
 )
 
-    $RandomPassword = ([char[]]([char]33..[char]95) + ([char[]]([char]97..[char]126)) + 0..9 | Sort-Object {Get-Random})[0..32] -join ''
+    $RandomPassword = -join(0..64|%{[char][int]((65..90) + (97..122)  | Get-Random)})
     $Password = ConvertTo-SecureString $RandomPassword -AsPlainText -Force
 
     $creds = Get-Credential
