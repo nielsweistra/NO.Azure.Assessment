@@ -5,7 +5,7 @@ param(
 Get-ChildItem -Path $PSScriptRoot -Recurse -File | Unblock-File
 
 class AzureRestServiceManager {
-
+    
     [guid] $SubscriptionId = "8b32203d-d655-41b1-84a7-2f119b31dc8a"    
     [guid] $TenantId = "b2569ab6-7aa8-43fe-9a2c-e4abeb992e00"
     [guid] $ClientId = "a72ae51b-31a2-4e9a-b1df-bca4778f01ab"
@@ -45,25 +45,39 @@ class AzureRestServiceManager {
     }
 }
 
-function New-Secret ($VaultName, $Name, $SecretValue) {
+function New-Secret  {
+    Param (
+    [parameter(Mandatory=$true)]
+    $VaultName,
+    [parameter(Mandatory=$true)]
+    $Name,
+    [parameter(Mandatory=$true)]
+    $SecretValue
+    )
 
     if(-not(Get-AzureKeyVaultSecret -vaultName $VaultName -name $Name)) {
 
         $secret = Set-AzureKeyVaultSecret -VaultName $VaultName -Name $Name -SecretValue $SecretValue
-        Write-Host (get-AzureKeyVaultSecret -vaultName $VaultName -name $Name).SecretValueText
+        Write-Verbose (get-AzureKeyVaultSecret -vaultName $VaultName -name $Name).SecretValueText
 
     }
     
 }
 
-function Get-Secret ($VaultName, $Name) {
+function Get-Secret {
+    Param (
+    [parameter(Mandatory=$true)]
+    $VaultName,
+    [parameter(Mandatory=$true)]
+    $Name
+    )
 
     if(Get-AzureKeyVaultSecret -vaultName $VaultName -name $Name) {
 
         $SecretVaulue = (get-AzureKeyVaultSecret -vaultName $VaultName -name $Name).SecretValueText
-        Write-Host $SecretVaulue
+        Write-Verbose $SecretVaulue
     }
-    return $SecretVaulue
+    return $SecretVaulue | Out-Null
 }
 
 function New-ServicePrincipal {
@@ -81,7 +95,7 @@ function New-ServicePrincipal {
     $azureAdApplication = New-AzureRmADApplication -DisplayName $DisplayName -HomePage $HomePage -IdentifierUris $IdentifierUris -Password $Password
     $servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $azureAdApplication.ApplicationId
 
-    Start-Sleep -s 10
+    Start-Sleep -s 15
 
     Write-Host "Assign Contributor Role to $($azureAdApplication.ApplicationId)"
     New-AzureRmRoleAssignment -RoleDefinitionName "Contributor" -ApplicationId $azureAdApplication.ApplicationId
@@ -99,28 +113,36 @@ function New-ServicePrincipal {
     $ClientSecret = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
     Write-Host "Client Secret: $($ClientSecret)"
     
-    return $azureAdApplication
+    return $servicePrincipal
 }
 
 function New-KeyVault {
     Param(
+    [parameter(Mandatory=$true)]
     [string]$VaultName,
+    [parameter(Mandatory=$true)]
     [string]$ResourceGroup,
+    [parameter(Mandatory=$true)]
     [string]$Region,
+    [parameter(Mandatory=$true)]
     [string]$Company,
+    [parameter(Mandatory=$true)]
     [string]$Enviroment,
-    [string]$ServicePrincipalName 
+    [parameter(Mandatory=$true)]
+    [psobject]$ServicePrincipal 
     )
 
+    $ObjectID = $ServicePrincipal.Where({$_.Type -eq "ServicePrincipal"}).ID.ToString()
+    
     New-AzureRmResourceGroup -Name $ResourceGroup -Location $Region -Tag @{Company=$Company; Enviroment=$Enviroment} -Force
     if (-not(Get-AzureRmKeyVault -VaultName $VaultName)) {
 
-        New-AzureRmKeyVault -VaultName $VaultName -ResourceGroupName $ResourceGroup -Location $Region -EnabledForTemplateDeployment -Verbose
-        Set-AzureRmKeyVaultAccessPolicy -ResourceGroupName $ResourceGroup -VaultName $VaultName -ServicePrincipalName $ServicePrincipalName -PermissionsToSecrets get, set -Verbose 
-
+        New-AzureRmKeyVault -VaultName $VaultName -ResourceGroupName $ResourceGroup -Location $Region -EnabledForTemplateDeployment -Verbose 
     }
 
-    return $VaultName
+    Set-AzureRmKeyVaultAccessPolicy -ResourceGroupName $ResourceGroup -VaultName $VaultName -ObjectId $ObjectID -PermissionsToSecrets get, set -Verbose
+
+    return $VaultName | Out-Null
 }
 function Set-AzurePolicy ($PolicyName, $SubscriptionID, $ApplicationID, $ClientSecret, $ResourceGroup) {
 
