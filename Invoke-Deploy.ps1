@@ -13,7 +13,7 @@ Param (
 )
 
 Write-Host "Start deploying Azure Key Fault" -ForegroundColor Green
-.\Deploy-AzurekeyFault.ps1 -TenantID $TenantID -SubscriptionID $SubscriptionID -ResourceGroup $VaultRG -Company $Company -Enviroment $Enviroment -ServicePrincipalName $ServicePrincipalName -VaultName $VaultName -Region $Region
+New-AzureKeyVault -TenantID $TenantID -SubscriptionID $SubscriptionID -ResourceGroup $VaultRG -Company $Company -Enviroment $Enviroment -ServicePrincipalName $ServicePrincipalName -VaultName $VaultName -Region $Region
 
 $ServicePrincipal = Get-AzureRmADServicePrincipal -DisplayName $ServicePrincipalName
 $ClientSecret = ConvertTo-SecureString (Get-Secret -VaultName $VaultName -Name $ServicePrincipalName) -AsPlainText -Force
@@ -33,8 +33,8 @@ $answer = $host.ui.PromptForChoice("Deploy Azure Template", "Are you sure?", $ch
 switch ($answer) {
     0 {
         Write-Host "Get ClientSecret from Vault"
-        $AdminPassword = Get-Secret -VaultName $VaultName -Name "LocalAdmin"
-        .\Deploy-AzureTemplate.ps1 -TenantID $TenantID -SubscriptionID $SubscriptionID -ResourceGroup $RG -ServicePrincipal $spCred.UserName -ServicePrincipalPassword $spCred.Password -AdminPassword $AdminPassword -Company $Company -Enviroment $Enviroment
+        $AdminPassword = ConvertTo-SecureString (Get-Secret -VaultName $VaultName -Name "LocalAdmin") -AsPlainText -Force
+        Start-AzureARMDeployment -TenantID $TenantID -SubscriptionID $SubscriptionID -ResourceGroup $RG -ServicePrincipal $spCred.UserName -ServicePrincipalPassword $spCred.Password -AdminPassword $AdminPassword -Company $Company -Enviroment $Enviroment
         
     }
     1 {
