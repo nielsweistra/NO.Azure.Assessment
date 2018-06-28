@@ -115,10 +115,10 @@ function New-AzureKeyVault {
     New-KeyVault -VaultName $VaultName -ResourceGroup $ResourceGroup -Region $Region -Company $Company -Enviroment $Enviroment -ServicePrincipal $ServicePrincipal
 
     Write-Host "Saving ClientSecret to the Azure Key Vault" 
-    New-Secret -VaultName $VaultName -Name $ServicePrincipalName -SecretValue $ClientSecret
+    New-Secret -VaultName $VaultName -Name $ServicePrincipalName -SecretValue $ClientSecret | out-Null
 
-    Write-Host "Saving ClientSecret to the Azure Key Vault"
-    New-Secret -VaultName $VaultName -Name "LocalAdmin" -SecretValue $AdminPassword
+    Write-Host "Saving AdminPassword to the Azure Key Vault"
+    New-Secret -VaultName $VaultName -Name "LocalAdmin" -SecretValue $AdminPassword | Out-Null
     
 }
 
@@ -148,7 +148,7 @@ function Start-AzureARMDeployment {
     New-AzureRmResourceGroup -Name $ResourceGroup -Location $Region -Tag @{Company = $Company; Enviroment = $Enviroment} -Force
     New-AzureRmResourceGroupDeployment -Name $DeployLabel -ResourceGroupName $ResourceGroup -TemplateFile $ArmTemplate -TemplateParameterFile $ArmTemplateParameters -Company $Company -AdminPassword $AdminPassword -AsJob -Verbose -Force
     Set-AzurePolicyResourceGroup -PolicyName "Allowed Resources in ResourceGroup" -SubscriptionID $SubscriptionID -ApplicationID $ServicePrincipal -ClientSecret $ServicePrincipalPassword -ResourceGroup $ResourceGroup
-    Set-AzurePolicyResourceGroup -PolicyName "AllowedResources in Subscription" -SubscriptionID $SubscriptionID -ApplicationID $ServicePrincipal -ClientSecret $ServicePrincipalPassword -ResourceGroup
+    Set-AzurePolicySubscription -PolicyName "AllowedResources in Subscription" -SubscriptionID $SubscriptionID -ApplicationID $ServicePrincipal -ClientSecret $ServicePrincipalPassword
     
 }
 function New-ServicePrincipal {
@@ -185,7 +185,6 @@ function New-ServicePrincipal {
 }
 
 function New-KeyVault {
-    [CmdletBinding()]
     Param(
         [parameter(Mandatory = $true)] [string]$VaultName,
         [parameter(Mandatory = $true)] [string]$ResourceGroup,
@@ -200,12 +199,12 @@ function New-KeyVault {
     New-AzureRmResourceGroup -Name $ResourceGroup -Location $Region -Tag @{Company = $Company; Enviroment = $Enviroment} -Force
     if (-not(Get-AzureRmKeyVault -VaultName $VaultName)) {
 
-        New-AzureRmKeyVault -VaultName $VaultName -ResourceGroupName $ResourceGroup -Location $Region -EnabledForTemplateDeployment -Verbose 
+        $KeyVault = New-AzureRmKeyVault -VaultName $VaultName -ResourceGroupName $ResourceGroup -Location $Region -EnabledForTemplateDeployment -Verbose 
     }
 
     Set-AzureRmKeyVaultAccessPolicy -ResourceGroupName $ResourceGroup -VaultName $VaultName -ObjectId $ObjectID -PermissionsToSecrets get, set -Verbose
 
-    return $VaultName | Out-Null
+    return $KeyVault
 }
 
 function Set-AzurePolicyResourceGroup ($PolicyName, $SubscriptionID, $ApplicationID, $ClientSecret, $ResourceGroup) {
@@ -214,8 +213,8 @@ function Set-AzurePolicyResourceGroup ($PolicyName, $SubscriptionID, $Applicatio
     $json = @'
     {
         "properties": {
-            "displayName": "Allowed resources",
-            "description": "This policy restrict the use of resources with the ResourceGroup",
+            "displayName": "Allowed resources ResourceGroup",
+            "description": "This policy restrict the use of resources within the ResourceGroup",
             "metadata": {
             "assignedBy": "Niels W."
             },
@@ -246,8 +245,8 @@ function Set-AzurePolicySubScription ($PolicyName, $SubscriptionID, $Application
     $json = @'
     {
         "properties": {
-            "displayName": "Allowed resources",
-            "description": "This policy restrict the use of resources with the ResourceGroup",
+            "displayName": "Allowed resources Subscription",
+            "description": "This policy restrict the use of resources within the Subscription",
             "metadata": {
             "assignedBy": "Niels W."
             },
@@ -268,6 +267,6 @@ function Set-AzurePolicySubScription ($PolicyName, $SubscriptionID, $Application
     $Secret = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
     
     $AzurePolicyManager = [AzureRestServiceManager]::new($SubscriptionID, $ApplicationID, $Secret)
-    $AzurePolicyManager.Put("https://management.azure.com/subscriptions/$($SubscriptionID)/resourceGroups/$($ResourceGroup)/providers/Microsoft.Authorization/policyAssignments/$($PolicyName)?api-version=2018-03-01", $json)
+    $AzurePolicyManager.Put("https://management.azure.com/subscriptions/$($SubscriptionID)/providers/Microsoft.Authorization/policyAssignments/$($PolicyName)?api-version=2018-03-01", $json)
    
 }
