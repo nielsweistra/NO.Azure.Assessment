@@ -13,7 +13,7 @@ Param (
 )
 
 Write-Host "Start deploying Azure Key Fault" -ForegroundColor Green
-New-AzureKeyVault -TenantID $TenantID -SubscriptionID $SubscriptionID -ResourceGroup $VaultRG -Company $Company -Enviroment $Enviroment -ServicePrincipalName $ServicePrincipalName -VaultName $VaultName -Region $Region
+Install-Requirements -TenantID $TenantID -SubscriptionID $SubscriptionID -ResourceGroup $VaultRG -Company $Company -Enviroment $Enviroment -ServicePrincipalName $ServicePrincipalName -VaultName $VaultName -Region $Region
 
 $ServicePrincipal = Get-AzureRmADServicePrincipal -DisplayName $ServicePrincipalName
 $ClientSecret = ConvertTo-SecureString (Get-Secret -VaultName $VaultName -Name $ServicePrincipalName) -AsPlainText -Force
