@@ -89,7 +89,7 @@ function Get-Secret {
     return $SecretValue
 }
 
-function New-AzureKeyVault {
+function Install-Requirements {
     Param(
         [parameter(Mandatory = $true)] [string]$TenantID,
         [parameter(Mandatory = $true)] [string]$SubscriptionID,
@@ -111,6 +111,10 @@ function New-AzureKeyVault {
     Write-Host "Creating Service Principal $($ServicePrincipalName) for the deployment of the ARM template, making calls to the REST Api and Managing Azure Policies."
     $ServicePrincipal = New-ServicePrincipal -Password $ClientSecret -DisplayName $ServicePrincipalName -HomePage "http://$(-join ((65..90) + (97..122) | Get-Random -Count 5 | ForEach-Object {[char]$_}))" -IdentifierUris "http://$(-join ((65..90) + (97..122) | Get-Random -Count 5 | ForEach-Object {[char]$_}))"
     
+    Write-Host "Assign roles to Service Principal"
+    $Roles = @("Api Management Service Contributor","Resource Policy Contributor (Preview)")
+    New-RoleAssignment -DisplayName $ServicePrincipalName -Roles $Roles
+
     Write-Host "Creating Azure Key Vault $($VaultName) in $($ResourceGroup) and authorize the Service Principal $($ServicePrincipalName) to get and set secrets"
     New-KeyVault -VaultName $VaultName -ResourceGroup $ResourceGroup -Region $Region -Company $Company -Enviroment $Enviroment -ServicePrincipal $ServicePrincipal
 
@@ -162,18 +166,7 @@ function New-ServicePrincipal {
 
     $azureAdApplication = New-AzureRmADApplication -DisplayName $DisplayName -HomePage $HomePage -IdentifierUris $IdentifierUris -Password $Password
     $servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $azureAdApplication.ApplicationId
-
-    Start-Sleep -s 15
-
-    Write-Host "Assign Contributor Role to $($azureAdApplication.ApplicationId)"
-    New-AzureRmRoleAssignment -RoleDefinitionName "Contributor" -ApplicationId $azureAdApplication.ApplicationId
-
-    Write-Host "Assign Api Management Service Contributor Role to $($azureAdApplication.ApplicationId)"
-    New-AzureRmRoleAssignment -RoleDefinitionName "Api Management Service Contributor" -ApplicationId $azureAdApplication.ApplicationId
-
-    Write-Host "Assign Resource Policy Contributor (Preview) Role to $($azureAdApplication.ApplicationId)"
-    New-AzureRmRoleAssignment -RoleDefinitionName "Resource Policy Contributor (Preview)" -ApplicationId $azureAdApplication.ApplicationId
-    
+   
     Write-Host "Application/Client ID: $($azureAdApplication.ApplicationId)"
     Write-Host "Object ID: $($azureAdApplication.ObjectID)"
 
@@ -182,6 +175,39 @@ function New-ServicePrincipal {
     Write-Host "Client Secret: $($ClientSecret)"
     
     return $servicePrincipal
+}
+
+
+function New-RoleAssignment {
+    [CmdletBinding()]
+    Param(
+        [parameter(ParameterSetName='ByDisplayName', Mandatory = $true)] [string] $DisplayName,
+        [parameter(Mandatory = $true)] [string[]] $Roles,
+        [parameter(ParameterSetName='ByApplicationID', Mandatory = $false)] [guid] $ApplicationID
+    )
+
+    switch ($PSCmdlet.ParameterSetName) {
+        "ByDisplayName" {
+
+            try{
+                $azureAdApplication = Get-AzureRmADApplication -DisplayName $DisplayName -ErrorAction Stop 
+                
+
+                $Roles | ForEach-Object {
+                    Write-Host "Assign $_ to $($DisplayName)"
+                    New-AzureRmRoleAssignment -RoleDefinitionName $_ -ApplicationId $azureAdApplication.ApplicationId
+                }
+                
+            }
+            catch{
+                
+                Write-Host "An error was occured $($_.Exception.Message)"
+            }
+        }
+        "ByApplicationID" {
+            Write-Host "Not implemented yet" 
+        }
+    }
 }
 
 function New-KeyVault {
