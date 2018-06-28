@@ -86,7 +86,7 @@
     "lbPoolID": "[concat(variables('lbID'),'/backendAddressPools/', variables('bePoolName'))]",
     "lbProbeID": "[concat(variables('lbID'),'/probes/lbprobe')]",
     "frontEndIPConfigID": "[concat(variables('lbID'),'/frontendIPConfigurations/loadBalancerFrontEnd')]",
-    "publicIPAddressName": "[concat(variables('namingInfix'), parameters('Enviroment') ,'lbpip')]",
+    "publicIPAddressName": "[toLower(concat(variables('namingInfix'), parameters('Enviroment') ,'lbpip'))]",
     "publicIPAddressID": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
   },
   "resources": [
@@ -260,7 +260,7 @@
     {
       "apiVersion": "2017-03-30",
       "type": "Microsoft.Compute/virtualMachines",
-      "name": "[concat(variables('namingInfix'), parameters('Company'), parameters('vmRole'), copyindex())]",
+      "name": "[toLower(concat(variables('namingInfix'), parameters('Enviroment'), parameters('vmRole'), copyindex()))]",
       "copy": {
         "name": "virtualMachineLoop",
         "count": "[variables('numberOfInstances')]"
