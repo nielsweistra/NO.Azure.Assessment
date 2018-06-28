@@ -146,7 +146,7 @@ function Start-AzureARMDeployment {
     Select-AzureRmSubscription -SubscriptionId $SubscriptionID
 
     New-AzureRmResourceGroup -Name $ResourceGroup -Location $Region -Tag @{Company = $Company; Enviroment = $Enviroment} -Force
-    New-AzureRmResourceGroupDeployment -Name $DeployLabel -ResourceGroupName $ResourceGroup -TemplateFile $ArmTemplate -TemplateParameterFile $ArmTemplateParameters -Company $Company -AdminPassword $AdminPassword -Verbose -Force
+    New-AzureRmResourceGroupDeployment -Name $DeployLabel -ResourceGroupName $ResourceGroup -TemplateFile $ArmTemplate -TemplateParameterFile $ArmTemplateParameters -Company $Company -AdminPassword $AdminPassword -Enviroment $Enviroment -Verbose -Force
     Set-AzurePolicyResourceGroup -PolicyName "Allowed Resources in ResourceGroup" -SubscriptionID $SubscriptionID -ApplicationID $ServicePrincipal -ClientSecret $ServicePrincipalPassword -ResourceGroup $ResourceGroup
     Set-AzurePolicySubscription -PolicyName "AllowedResources in Subscription" -SubscriptionID $SubscriptionID -ApplicationID $ServicePrincipal -ClientSecret $ServicePrincipalPassword
     
