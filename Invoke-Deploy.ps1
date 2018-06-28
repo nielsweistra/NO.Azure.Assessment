@@ -42,7 +42,7 @@ switch ($answer) {
     }
 }
 
-Write-Host "The password that is used for setting the AdminPassword is saved as a secret the Azure Key Vault"
+Write-Host "The password that is used for setting the AdminPassword is saved as a secret in Azure Key Vault"
 Read-Host -Prompt "Press any key to cleanup this demo or CTRL+C to quit" 
 
 Remove-AzureRmResourceGroup -Name $VaultRG -Force -AsJob
