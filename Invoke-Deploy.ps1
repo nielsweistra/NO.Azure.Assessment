@@ -32,7 +32,7 @@ $answer = $host.ui.PromptForChoice("Deploy Azure Template", "Are you sure?", $ch
 
 switch ($answer) {
     0 {
-        Write-Host "Get ClientSecret from Vault"
+        Write-Host "Get AdminPassword from Vault"
         $AdminPassword = ConvertTo-SecureString (Get-Secret -VaultName $VaultName -Name "LocalAdmin") -AsPlainText -Force
         Start-AzureARMDeployment -TenantID $TenantID -SubscriptionID $SubscriptionID -ResourceGroup $RG -ServicePrincipal $spCred.UserName -ServicePrincipalPassword $spCred.Password -AdminPassword $AdminPassword -Company $Company -Enviroment $Enviroment
         
